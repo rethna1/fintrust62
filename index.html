@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>SIP Planner – FinTrust Creations</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --green-dark:#2e7d32;
+    --green-light:#9ccc65;
+    --accent-thumb:#4caf50;
+    --label-bg:#ebebeb;
+    --header-bg:#b4e49a;
+    --footer-bg:#f9f9f9;
+    --bar-fill:#000;
+    --bar-bg:#e0e0e0;
+    --divider:#e6e6e6;
+  }
+  body {margin:0;background:#f7f7f7;font-family:"Segoe UI",Roboto,Arial,sans-serif;}
+  .calculator{width:380px;max-width:calc(100% - 24px);margin:20px auto;background:#fff;border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);overflow:hidden;}
+  .header{display:flex;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #eaeaea;}
+  .round-logo{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--green-dark),var(--green-light));color:#fff;width:60px;height:60px;
+    border-radius:50%;font-weight:700;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,0.15);margin-right:12px;}
+  .logo-initials{font-size:1.2rem;line-height:1;}
+  .logo-text{font-size:0.45rem;margin-top:1px;line-height:1.1;font-weight:600;text-transform:uppercase;}
+  .header h1{margin:0;font-size:18px;font-weight:400;color:#222;}
+  .fields{padding:14px;}
+  .field{padding:12px 0;border-bottom:1px solid #f3f3f3;}
+  .field label{display:block;margin-bottom:8px;color:#333;font-size:13px;font-weight:600;}
+  .input-group{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d2d2d2;border-radius:6px;overflow:hidden;}
+  .input-group span{background:var(--label-bg);color:#333;padding:9px 14px;font-weight:600;font-size:14px;min-width:44px;text-align:center;}
+  .input-group input[type="number"]{border:0;width:100%;font-size:16px;padding:8px;background:#fff;outline:none;-moz-appearance:textfield;color:#222;font-weight:500;}
+  .range{width:100%;height:10px;margin-top:12px;-webkit-appearance:none;appearance:none;border-radius:5px;background:linear-gradient(to right,var(--bar-fill) 0%,var(--bar-bg) 0%);outline:none;transition:0.2s;}
+  .range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--accent-thumb);border:3px solid #fff;cursor:pointer;margin-top:-6px;box-shadow:0 0 8px rgba(0,0,0,0.35);}
+  .result-header{background:var(--header-bg);text-align:center;color:#2a2a2a;padding:14px;font-size:18px;font-weight:600;position:relative;}
+  .reset-btn{display:none;position:absolute;right:14px;top:50%;transform:translateY(-50%);background:#2e7d32;color:#fff;border:none;border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;}
+  .result{text-align:left;font-size:16px;color:#000;font-weight:400;}
+  .result-row{padding:16px 20px;border-bottom:1px solid var(--divider);}
+  .result-row:last-child{border-bottom:none;}
+  .result-row .label{color:#333;font-weight:600;}
+  .result-row .value{font-size:24px;font-weight:700;color:#000;display:block;margin-top:6px;}
+  .chart-section{padding:18px 0;border-top:1px solid #e5e5e5;border-bottom:1px solid #e5e5e5;text-align:center;position:relative;background:#fff;}
+  .chart-container{width:250px;height:230px;margin:0 auto;position:relative;}
+  .chart-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-size:15px;color:#000;font-weight:600;line-height:1.3;pointer-events:none;}
+  .chart-center .label{display:block;font-size:12px;color:#555;font-weight:500;}
+  .chart-legend{margin-top:8px;display:flex;justify-content:center;gap:14px;font-size:13px;color:#333;background:#fff;}
+  .legend-box{width:12px;height:12px;display:inline-block;margin-right:6px;vertical-align:middle;}
+  .table-wrapper{margin:12px 14px 18px;border-radius:8px;border:1px solid #eee;max-height:250px;overflow:auto;}
+  table{width:100%;border-collapse:collapse;min-width:600px;}
+  th,td{padding:8px 10px;border-bottom:1px solid #f1f1f1;text-align:center;font-size:13px;}
+  th{background:#fafafa;font-weight:700;color:#333;position:sticky;top:0;z-index:2;}
+  .card-footer{font-size:11px;color:#333;padding:12px 12px 18px;background:var(--footer-bg);border-top:1px solid #ccc;text-align:justify;line-height:1.45;}
+  .copyright{text-align:center;margin-top:6px;font-size:11px;color:#333;font-weight:500;}
+  /* 🔒 Prevent mobile zoom on input focus */
+  input[type="number"],
+  input[type="text"],
+  input[type="range"] {
+    font-size:16px;
+  }
+  @media (max-width:420px){ .calculator { width:calc(100% - 16px); margin:12px; } }
+</style>
+</head>
+<body>
+
+<div class="calculator" id="plannerApp">
+<div class="header">
+  <div class="round-logo">
+    <span class="logo-initials">FM</span>
+    <span class="logo-text">Fintrust Distribution</span>
+  </div>
+  <h1>SIP Planner </h1>
+</div>
+
+  <div class="fields">
+    <div class="field">
+      <label>Monthly SIP (₹)</label>
+      <div class="input-group">
+        <span>₹</span>
+        <input type="number" id="sipAmount" value="5000" min="0" />
+      </div>
+      <input id="sipRange" class="range" type="range" min="100" max="100000" step="100" value="5000" />
+    </div>
+
+    <div class="field">
+      <label>Duration (Years)</label>
+      <div class="input-group">
+        <span>Years</span>
+        <input type="number" id="years" value="10" min="1" />
+      </div>
+      <input id="yearsRange" class="range" type="range" min="1" max="40" step="1" value="10" />
+    </div>
+
+    <div class="field">
+      <label>Expected Return (annual %)</label>
+      <div class="input-group">
+        <span>%</span>
+        <input type="number" id="rate" value="12" step="0.1" min="0" />
+      </div>
+      <input id="rateRange" class="range" type="range" min="0.1" max="25" step="0.1" value="12" />
+    </div>
+
+    <div class="field">
+      <label>Annual Step-up (%)</label>
+      <div class="input-group">
+        <span>%</span>
+        <input type="number" id="stepup" value="0" step="0.1" min="0" />
+      </div>
+      <input id="stepupRange" class="range" type="range" min="0" max="50" step="0.5" value="0" />
+    </div>
+  </div>
+
+  <div class="result-header">
+    Your SIP Details
+    <button id="resetBtn" class="reset-btn">Reset</button>
+  </div>
+
+  <div class="result" id="results">
+    <div class="result-row"><span class="label">Invested Amount</span><span class="value" id="invested">₹0</span></div>
+    <div class="result-row"><span class="label">Estimated Returns</span><span class="value" id="gain">₹0</span></div>
+    <div class="result-row" style="border-bottom:none;"><span class="label">Maturity Value</span><span class="value" id="future">₹0</span></div>
+  </div>
+
+  <div class="chart-section">
+    <div class="chart-container">
+      <canvas id="plannerChart"></canvas>
+      <div class="chart-center"><span class="label">Maturity Value</span><span id="centerVal">₹0</span></div>
+    </div>
+
+    <div class="chart-legend">
+      <span><span class="legend-box" style="background:#2e7d32"></span>Invested Amount</span>
+      <span><span class="legend-box" style="background:#9ccc65"></span>Estimated Returns</span>
+    </div>
+  </div>
+
+  <div class="table-wrapper" id="yearTable"></div>
+
+  <div class="card-footer">
+    Disclaimer: This SIP planner provides estimated projections based on the inputs. Actual returns may vary depending on market conditions and fund performance. Mutual Fund investments are subject to market risks. Please read scheme documents carefully before investing.
+    <div class="copyright">© <span id="year"></span> FinTrust MF Distribution | All Rights Reserved</div>
+  </div>
+</div>
+
+<script>
+  const sipAmount = document.getElementById('sipAmount');
+  const years = document.getElementById('years');
+  const rate = document.getElementById('rate');
+  const stepup = document.getElementById('stepup');
+  const sipRange = document.getElementById('sipRange');
+  const yearsRange = document.getElementById('yearsRange');
+  const rateRange = document.getElementById('rateRange');
+  const stepupRange = document.getElementById('stepupRange');
+  const investedEl = document.getElementById('invested');
+  const gainEl = document.getElementById('gain');
+  const futureEl = document.getElementById('future');
+  const centerVal = document.getElementById('centerVal');
+  const yearTable = document.getElementById('yearTable');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const defaults = { sip:5000, yrs:10, rate:12, step:0 };
+
+  function fmtINR(n){ if(!isFinite(n)) n = 0; return '\u20B9' + Math.round(n).toLocaleString('en-IN'); }
+
+  function updateRangeBackground(input){
+    const value=(Number(input.value)-Number(input.min))/(Number(input.max)-Number(input.min))*100;
+    input.style.background=`linear-gradient(to right, var(--bar-fill) ${value}%, var(--bar-bg) ${value}%)`;
+  }
+
+  document.querySelectorAll('.range').forEach(r=>{
+    updateRangeBackground(r);
+    r.addEventListener('input', ()=>{
+      updateRangeBackground(r);
+      if(r === sipRange) sipAmount.value = r.value;
+      if(r === yearsRange) years.value = r.value;
+      if(r === rateRange) rate.value = r.value;
+      if(r === stepupRange) stepup.value = r.value;
+      calculateAndRender();
+      checkShowReset();
+    });
+  });
+
+  [sipAmount, years, rate, stepup].forEach(el=>{
+    el.addEventListener('input', ()=>{
+      if(el === sipAmount) sipRange.value = el.value || 0;
+      if(el === years) yearsRange.value = el.value || 1;
+      if(el === rate) rateRange.value = el.value || 0.1;
+      if(el === stepup) stepupRange.value = el.value || 0;
+      document.querySelectorAll('.range').forEach(updateRangeBackground);
+      calculateAndRender();
+      checkShowReset();
+    });
+  });
+
+  const ctx = document.getElementById('plannerChart').getContext('2d');
+  const plannerChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: ['Invested Amount','Estimated Returns'], datasets:[{ data:[0,0], backgroundColor:['#2e7d32','#9ccc65'], borderColor:'#fff', borderWidth:2 }] },
+    options: { cutout: '70%', plugins:{legend:{display:false}}, maintainAspectRatio:false }
+  });
+
+  function calculateAndRender(){
+    const baseMonthly = Math.max(0, Number(sipAmount.value) || 0);
+    const yrs = Math.max(1, Math.floor(Number(years.value) || 1));
+    const annualRate = Math.max(0, Number(rate.value) || 0) / 100;
+    const stepRate = Math.max(0, Number(stepup.value) || 0) / 100;
+    const monthlyRate = Math.pow(1 + annualRate, 1/12) - 1;
+
+    let invested = 0, future = 0, table = [];
+
+    for(let y=1; y<=yrs; y++){
+      const monthlyThisYear = baseMonthly * Math.pow(1 + stepRate, y - 1);
+      for(let m=1; m<=12; m++){
+        future = (future + monthlyThisYear) * (1 + monthlyRate);
+        invested += monthlyThisYear;
+      }
+      table.push({ year: y, invested: Math.round(invested), future: Math.round(future), gain: Math.round(future - invested) });
+    }
+
+    const last = table[table.length - 1] || { invested:0, future:0, gain:0 };
+
+    investedEl.textContent = fmtINR(last.invested);
+    gainEl.textContent = fmtINR(last.gain);
+    futureEl.textContent = fmtINR(last.future);
+    centerVal.textContent = fmtINR(last.future);
+
+    plannerChart.data.datasets[0].data = [ last.invested > 0 ? last.invested : 0, last.gain > 0 ? last.gain : 0 ];
+    plannerChart.update();
+
+    let html = '<table><thead><tr><th>Year</th><th>Invested (₹)</th><th>Future Value (₹)</th><th>Gain (₹)</th></tr></thead><tbody>';
+    for(const r of table){
+      html += `<tr><td>${r.year}</td><td>${r.invested.toLocaleString('en-IN')}</td><td>${r.future.toLocaleString('en-IN')}</td><td>${r.gain.toLocaleString('en-IN')}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    yearTable.innerHTML = html;
+  }
+
+  function checkShowReset(){
+    const changed = (+sipAmount.value !== defaults.sip) || (+years.value !== defaults.yrs) || (+rate.value !== defaults.rate) || (+stepup.value !== defaults.step);
+    resetBtn.style.display = changed ? 'inline-block' : 'none';
+  }
+
+  resetBtn.addEventListener('click', ()=>{
+    sipAmount.value = defaults.sip;
+    years.value = defaults.yrs;
+    rate.value = defaults.rate;
+    stepup.value = defaults.step;
+    sipRange.value = defaults.sip;
+    yearsRange.value = defaults.yrs;
+    rateRange.value = defaults.rate;
+    stepupRange.value = defaults.step;
+    document.querySelectorAll('.range').forEach(updateRangeBackground);
+    calculateAndRender();
+    resetBtn.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  document.getElementById("year").innerText = new Date().getFullYear();
+  calculateAndRender();
+  checkShowReset();
+</script>
+  <!-- Floating Round Back Button -->
+<a href="https://rethna1.github.io/fintrust60/" class="round-back-btn" title="Back to Main Page">←</a>
+
+<style>
+.round-back-btn {
+  position: fixed;
+  bottom: 18px;
+  left: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2e7d32, #66bb6a);
+  color: #fff;
+  font-size: 22px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  z-index: 9999;
+  transition: all 0.25s ease;
+}
+.round-back-btn:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #1b5e20, #81c784);
+}
+</style>
+</body>
+</html>
